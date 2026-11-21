@@ -36,28 +36,28 @@ button:hover{border-color:var(--cyan);background:#294763}button:disabled{opacity
 <header><div class="brand">CHAOS <span>CHESS</span></div><div class="status">16 × 16 BATTLEFIELD · PROTOTYPE 0.1</div></header>
 <main>
 <section class="panel">
-  <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px"><div><h2>Battlefield</h2><div class="muted">Tap a piece, then tap a destination.</div></div><div class="legend"><span><i class="dot" style="background:#eaf2f8"></i>White</span><span><i class="dot" style="background:#25364b"></i>Black</span></div></div>
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px"><div><h2>Battlefield</h2><div class="muted" id="boardHelp">Select a piece, then choose a move or a combination.</div></div><div class="legend"><span><i class="dot" style="background:#eaf2f8"></i>White</span><span><i class="dot" style="background:#25364b"></i>Black</span></div></div>
   <div class="board-wrap"><div id="board" aria-label="16 by 16 chess board"></div></div>
 </section>
 <aside class="side">
 <section class="panel"><div class="muted">CURRENT TURN</div><div class="turn" id="turn">WHITE</div><p class="muted" id="message">White moves first. Select one of your pieces.</p></section>
-<section class="panel"><h3>Fusion Workshop</h3><p class="muted">Special fusions will be added as their rules are finalized.</p><div class="actions"><button id="overlord">Create Pawn Overlord</button><button id="bonus">King + Queen → 6 Pawns</button></div><p class="muted" id="fusionNote">Pawn Overlord uses all eight starting pawns and occupies a 4×4 area.</p></section>
+<section class="panel"><h3>Fusion Workshop</h3><p class="muted">Special fusions will be added as their rules are finalized.</p><div class="actions"><button id="moveMode">Move pieces</button><button id="combineMode">Combine pieces</button><button id="overlord">Create Pawn Overlord</button><button id="bonus">King + Queen → 6 Pawns</button></div><p class="muted" id="fusionNote">Pawn Overlord uses all eight starting pawns and occupies a 4×4 area.</p></section>
 <section class="panel"><h3>Game Log</h3><div class="log" id="log"><div>Battlefield initialized.</div><div>White and Black armies deployed.</div></div><div style="display:flex;gap:8px;margin-top:10px"><button id="reset" style="flex:1">Reset board</button><button id="end" style="flex:1">End turn</button></div></section>
 </aside>
 </main>
 <script>
 const SIZE=16, files="ABCDEFGHIJKLMNOP";
 const boardEl=document.getElementById('board'), logEl=document.getElementById('log');
-let grid=Array.from({length:SIZE},()=>Array(SIZE).fill(null)), turn='w', selected=null, legal=[], gameOver=false;
+let grid=Array.from({length:SIZE},()=>Array(SIZE).fill(null)), turn='w', selected=null, legal=[], gameOver=false, actionMode='move', combineFirst=null;
 const names={p:'Pawn',r:'Rook',n:'Knight',b:'Bishop',q:'Queen',k:'King'};
 const codes={p:'p',r:'r',n:'n',b:'b',q:'q',k:'k'};
 const pieceUrl=(color,type)=>'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/'+color+type+'.png';
 function addPiece(x,y,color,type,extra={}){grid[y][x]={color,type,...extra};}
 function setup(){
  grid=Array.from({length:SIZE},()=>Array(SIZE).fill(null));
- const back=['r','n','b','q','k','b','n','r'];
- for(let i=0;i<8;i++){addPiece(4+i,0,'w',back[i]);addPiece(4+i,1,'w','p');addPiece(4+i,15,'b',back[i]);addPiece(4+i,14,'b','p');}
- turn='w';selected=null;legal=[];gameOver=false;render();log('Armies deployed. White to move.');
+ const back=['r','n','b','q','k','b','n','r','r','n','b','q','k','b','n','r'];
+ for(let i=0;i<16;i++){addPiece(i,0,'w',back[i]);addPiece(i,1,'w','p');addPiece(i,15,'b',back[i]);addPiece(i,14,'b','p');}
+ turn='w';selected=null;legal=[];gameOver=false;actionMode='move';combineFirst=null;render();log('32 pieces per side deployed. White to move.');
 }
 function log(t){const d=document.createElement('div');d.textContent=t;logEl.prepend(d);}
 function inside(x,y){return x>=0&&x<SIZE&&y>=0&&y<SIZE}
@@ -73,6 +73,22 @@ function movesFor(x,y){
  return out;
 }
 function select(x,y){const p=grid[y][x];if(p&&p.color===turn){selected=[x,y];legal=movesFor(x,y);render();}}
+function combineAt(x,y){
+ const p=grid[y][x];
+ if(!p||p.color!==turn){document.getElementById('message').textContent='Choose another piece from your own army.';return;}
+ if(!combineFirst){combineFirst=[x,y];selected=[x,y];legal=[];document.getElementById('message').textContent='Now select the second piece to combine with '+names[p.type]+'.';render();return;}
+ const [ax,ay]=combineFirst, first=grid[ay][ax];
+ if(ax===x&&ay===y){combineFirst=null;selected=null;document.getElementById('message').textContent='Combination cancelled.';render();return;}
+ const isKingQueen=(first.type==='k'&&p.type==='q')||(first.type==='q'&&p.type==='k');
+ if(!isKingQueen){document.getElementById('message').textContent='That pair has no combination recipe yet. Try a King + Queen combination.';combineFirst=[x,y];selected=[x,y];render();return;}
+ const empty=[];for(let yy=2;yy<14;yy++)for(let xx=0;xx<SIZE;xx++)if(!grid[yy][xx])empty.push([xx,yy]);
+ if(empty.length<6){document.getElementById('message').textContent='Not enough empty squares for the six bonus Pawns.';return;}
+ for(let i=0;i<6;i++){const [xx,yy]=empty[i];grid[yy][xx]={color:turn,type:'p'};}
+ log(turn.toUpperCase()+' combined King + Queen: created 6 Pawns. King and Queen remain.');
+ combineFirst=null;selected=null;legal=[];actionMode='move';turn=turn==='w'?'b':'w';
+ document.getElementById('message').textContent='Combination successful! Six Pawns were created.';
+ render();
+}
 function move(x,y){if(!selected)return;let [sx,sy]=selected;if(!legal.some(m=>m[0]===x&&m[1]===y))return;let moving=grid[sy][sx],taken=grid[y][x];grid[y][x]=moving;grid[sy][sx]=null;log(turn.toUpperCase()+' moved '+names[moving.type]+' to '+files[x]+(y+1)+(taken?' and captured '+names[taken.type]:''));selected=null;legal=[];if(taken?.type==='k'){gameOver=true;document.getElementById('message').textContent='King captured — prototype victory!';}else turn=turn==='w'?'b':'w';render();}
 function render(){
  boardEl.innerHTML='';
@@ -82,12 +98,17 @@ function render(){
   if(legal.some(m=>m[0]===x&&m[1]===y))s.classList.add(grid[y][x]?'capture':'target');
   if(x===0||y===0){const c=document.createElement('span');c.className='coord';c.textContent=files[x]+(y+1);s.append(c);}
   const p=grid[y][x];if(p){if(p.type==='o'){s.classList.add('overlord-cell');if(p.leader){const mark=document.createElement('span');mark.className='overlord-mark';mark.textContent='♟';mark.style.color='#fff';s.append(mark);}}else{const img=document.createElement('img');img.className='piece';img.alt=(p.color==='w'?'White ':'Black ')+names[p.type];img.src=pieceUrl(p.color,p.type);img.onerror=()=>{img.remove();const f=document.createElement('span');f.className='fallback';f.textContent=({p:'♟',r:'♜',n:'♞',b:'♝',q:'♛',k:'♚'})[p.type];f.style.color=p.color==='w'?'#fff':'#172333';s.append(f)};s.append(img);}}
-  s.addEventListener('click',()=>{if(gameOver)return;if(selected&&legal.some(m=>m[0]===x&&m[1]===y))move(x,y);else select(x,y);});boardEl.append(s);
+  s.addEventListener('click',()=>{if(gameOver)return;if(actionMode==='combine'){combineAt(x,y);return;}if(selected&&legal.some(m=>m[0]===x&&m[1]===y))move(x,y);else select(x,y);});boardEl.append(s);
  }
  document.getElementById('turn').textContent=gameOver?'GAME OVER':turn==='w'?'WHITE':'BLACK';
  document.getElementById('turn').style.color=turn==='w'?'#45d7e8':'#f6bd55';
+ document.getElementById('boardHelp').textContent=actionMode==='combine'?'COMBINE MODE: select your first piece, then select its partner.':'MOVE MODE: select a piece, then tap a highlighted square.';
+ document.getElementById('moveMode').style.borderColor=actionMode==='move'?'var(--cyan)':'';
+ document.getElementById('combineMode').style.borderColor=actionMode==='combine'?'var(--gold)':'';
 }
 function findPieces(color,type){let a=[];for(let y=0;y<16;y++)for(let x=0;x<16;x++)if(grid[y][x]?.color===color&&grid[y][x]?.type===type)a.push([x,y]);return a;}
+document.getElementById('moveMode').onclick=()=>{actionMode='move';combineFirst=null;selected=null;legal=[];document.getElementById('message').textContent='Move mode selected.';render();};
+document.getElementById('combineMode').onclick=()=>{actionMode='combine';combineFirst=null;selected=null;legal=[];document.getElementById('message').textContent='Select the first piece you want to combine.';render();};
 document.getElementById('overlord').onclick=()=>{
  if(turn!=='w'||gameOver)return;let pawns=findPieces('w','p');if(pawns.length!==8){document.getElementById('fusionNote').textContent='You need all 8 starting pawns available to create Pawn Overlord.';return;}
  // Prototype footprint centered in the white deployment zone. Remove pawns, place one 4x4 super-piece.
