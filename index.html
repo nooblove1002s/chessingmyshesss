@@ -41,7 +41,7 @@ button:hover{border-color:var(--cyan);background:#294763}button:disabled{opacity
 </section>
 <aside class="side">
 <section class="panel"><div class="muted">CURRENT TURN</div><div class="turn" id="turn">WHITE</div><p class="muted" id="message">White moves first. Select one of your pieces.</p></section>
-<section class="panel"><h3>Fusion Workshop</h3><p class="muted">Special fusions will be added as their rules are finalized.</p><div class="actions"><button id="moveMode">Move pieces</button><button id="combineMode">Combine pieces</button><button id="overlord">Create Pawn Overlord</button><button id="bonus">King + Queen → 6 Pawns</button></div><p class="muted" id="fusionNote">Pawn Overlord uses all eight starting pawns and occupies a 4×4 area.</p></section>
+<section class="panel"><h3>Fusion Workshop</h3><p class="muted">Special fusions will be added as their rules are finalized.</p><div class="actions"><button id="moveMode">Move pieces</button><button id="combineMode">Combine pieces</button><button id="overlord">Create Pawn Overlord</button></div><p class="muted" id="fusionNote">Pawn Overlord uses all 16 starting pawns and occupies a 4×4 area.</p></section>
 <section class="panel"><h3>Game Log</h3><div class="log" id="log"><div>Battlefield initialized.</div><div>White and Black armies deployed.</div></div><div style="display:flex;gap:8px;margin-top:10px"><button id="reset" style="flex:1">Reset board</button><button id="end" style="flex:1">End turn</button></div></section>
 </aside>
 </main>
@@ -110,7 +110,7 @@ function findPieces(color,type){let a=[];for(let y=0;y<16;y++)for(let x=0;x<16;x
 document.getElementById('moveMode').onclick=()=>{actionMode='move';combineFirst=null;selected=null;legal=[];document.getElementById('message').textContent='Move mode selected.';render();};
 document.getElementById('combineMode').onclick=()=>{actionMode='combine';combineFirst=null;selected=null;legal=[];document.getElementById('message').textContent='Select the first piece you want to combine.';render();};
 document.getElementById('overlord').onclick=()=>{
- if(turn!=='w'||gameOver)return;let pawns=findPieces('w','p');if(pawns.length!==8){document.getElementById('fusionNote').textContent='You need all 8 starting pawns available to create Pawn Overlord.';return;}
+ if(turn!=='w'||gameOver)return;let pawns=findPieces('w','p');if(pawns.length!==16){document.getElementById('fusionNote').textContent='You need all 16 starting pawns available to create Pawn Overlord.';return;}
  // Prototype footprint centered in the white deployment zone. Remove pawns, place one 4x4 super-piece.
  pawns.forEach(([x,y])=>grid[y][x]=null);
  const ox=6,oy=2;for(let yy=oy;yy<oy+4;yy++)for(let xx=ox;xx<ox+4;xx++)grid[yy][xx]={color:'w',type:'o',part:true};
