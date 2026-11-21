@@ -22,7 +22,9 @@ main{max-width:1500px;margin:auto;padding:16px;display:grid;grid-template-column
 .piece{width:88%;height:88%;object-fit:contain;pointer-events:none;filter:drop-shadow(0 2px 2px #0007);z-index:1}
 .fallback{font-size:clamp(18px,3vw,40px);line-height:1}
 .coord{position:absolute;font-size:8px;color:#16283b88;left:2px;top:1px;pointer-events:none}
-.square.dark .coord{color:#f5f8fc99}\n.square.overlord-cell{background:repeating-linear-gradient(135deg,#e0a63b,#e0a63b 8px,#b87925 8px,#b87925 16px)!important;box-shadow:inset 0 0 0 1px #fff7}\n.overlord-mark{font-size:clamp(18px,3vw,38px);filter:drop-shadow(0 2px 2px #0008);z-index:2}
+.square.dark .coord{color:#f5f8fc99}
+.square.overlord-cell{background:repeating-linear-gradient(135deg,#e0a63b,#e0a63b 8px,#b87925 8px,#b87925 16px)!important;box-shadow:inset 0 0 0 1px #fff7}
+.overlord-mark{font-size:clamp(18px,3vw,38px);filter:drop-shadow(0 2px 2px #0008);z-index:2}
 h2,h3{margin:0 0 10px}.side{display:flex;flex-direction:column;gap:12px}.turn{font-size:19px;font-weight:850;color:var(--cyan)}.muted{color:#a9bfd2;font-size:13px;line-height:1.45}
 button{border:1px solid #36516e;background:#203650;color:#f2f8ff;border-radius:10px;padding:10px 12px;font-weight:750;cursor:pointer}
 button:hover{border-color:var(--cyan);background:#294763}button:disabled{opacity:.4;cursor:not-allowed}
@@ -116,12 +118,6 @@ document.getElementById('overlord').onclick=()=>{
  const ox=6,oy=2;for(let yy=oy;yy<oy+4;yy++)for(let xx=ox;xx<ox+4;xx++)grid[yy][xx]={color:'w',type:'o',part:true};
  grid[oy+1][ox+1]={color:'w',type:'o',leader:true};
  selected=null;legal=[];log('WHITE created PAWN OVERLORD (4×4).');document.getElementById('fusionNote').textContent='Pawn Overlord deployed. Its special attack and far-side victory rule are next-stage mechanics.';turn='b';render();
-};
-document.getElementById('bonus').onclick=()=>{
- if(turn!=='w'||gameOver)return;let k=findPieces('w','k'),q=findPieces('w','q');if(!k.length||!q.length){document.getElementById('fusionNote').textContent='Your King and Queen must both be on the board.';return;}
- let spots=[];for(let y=2;y<14;y++)for(let x=0;x<16;x++)if(!grid[y][x])spots.push([x,y]);if(spots.length<6)return;
- for(let i=0;i<6;i++){let [x,y]=spots[i];grid[y][x]={color:'w',type:'p'};}
- log('WHITE used King + Queen bonus: 6 additional Pawns. King and Queen remain.');turn='b';selected=null;legal=[];render();
 };
 document.getElementById('end').onclick=()=>{if(!gameOver){turn=turn==='w'?'b':'w';selected=null;legal=[];log('Turn passed.');render();}};
 document.getElementById('reset').onclick=()=>{logEl.innerHTML='';setup();};
